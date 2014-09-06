@@ -12,9 +12,9 @@ import MySQLdb.cursors
 import os, sys, ConfigParser
 
 config = ConfigParser.ConfigParser()
-config.read('config.cfg')
+config.read('/etc/openvpn/scripts/config.cfg')
 
-# This is at least going to be ipv6-compliant; I don't use ipv4 so that's less
+# This is at least going to be ipv6-ready; I don't use ipv4 so that's less
 # well tested...
 try:
     ip=os.environ['untrusted_ip']
@@ -32,10 +32,16 @@ PORT = config.getint('Database', 'Port')
 AUTH_PASSWD = config.get('AuthUser', 'Password')
 AUTH_USER = config.get('AuthUser', 'Username')
 
+def failrecord():
+    c.execute("""INSERT INTO failures (username, time, remote_ip, local_ip) VALUES (%s, now(), %s, %s)""", (os.environ['username'], ip, '127.0.0.1'))
+    db.commit()
+    c.close()
+    db.close()
+    sys.exit(1)
+
 
 db=MySQLdb.connect(host=HOST,port=PORT,passwd=AUTH_PASSWD,db=DATABASE,user=AUTH_USER,cursorclass=MySQLdb.cursors.DictCursor)
 
-#hash = pbkdf2_sha512.encrypt(os.environ['password'])
 c=db.cursor()
 
 
@@ -44,12 +50,16 @@ c.execute("""SELECT count(*) AS failures FROM failures WHERE remote_ip = %s AND 
 # I put this before it tries to pull the password, because it's harder to try SQL injecting with an IP address
 if c.fetchone()['failures'] > 5:
     print """Too many failed password attempts for IP %s, failing""" % (ip)
-    sys.exit(1)
-
-
-c.execute("""SELECT * FROM users WHERE username = %s""", (os.environ['username']))
+    failrecord()
 
 success=0
+
+
+try:
+    c.execute("""SELECT * FROM users WHERE username = %s""", (os.environ['username']))
+except:
+    print "could not execute"
+
 
 try:
     if pbkdf2_sha512.verify(os.environ['password'], c.fetchone()['password']):
@@ -60,16 +70,13 @@ try:
         success=0
 except:
     print "other error"
-    sys.exit(1)
+    failrecord()
 
 
 if success==1:
     sys.exit(0)
 else:
-    c.execute("""INSERT INTO failures (username, time, remote_ip, local_ip) VALUES (%s, now(), %s, %s)""", (os.environ['username'], ip, '127.0.0.1'))
-    db.commit()
-    sys.exit(1)
-
+    failrecord()
 
 c.close()
 db.close()
