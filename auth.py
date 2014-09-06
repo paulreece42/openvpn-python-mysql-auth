@@ -14,6 +14,18 @@ import os, sys, ConfigParser
 config = ConfigParser.ConfigParser()
 config.read('config.cfg')
 
+# This is at least going to be ipv6-compliant; I don't use ipv4 so that's less
+# well tested...
+try:
+    ip=os.environ['untrusted_ip']
+except:
+    pass
+
+try:
+    ip=os.environ['untrusted_ip6']
+except:
+    pass
+
 DATABASE = config.get('Database', 'Database')
 HOST = config.get('Database', 'Host')
 PORT = config.getint('Database', 'Port')
@@ -27,11 +39,11 @@ db=MySQLdb.connect(host=HOST,port=PORT,passwd=AUTH_PASSWD,db=DATABASE,user=AUTH_
 c=db.cursor()
 
 
-c.execute("""SELECT count(*) AS failures FROM failures WHERE remote_ip = %s AND time > (NOW() - INTERVAL 15 MINUTE)""", (os.environ['untrusted_ip']))
+c.execute("""SELECT count(*) AS failures FROM failures WHERE remote_ip = %s AND time > (NOW() - INTERVAL 15 MINUTE)""", (ip))
 
 # I put this before it tries to pull the password, because it's harder to try SQL injecting with an IP address
 if c.fetchone()['failures'] > 5:
-    print """Too many failed password attempts for IP %s, failing""" % (os.environ['untrusted_ip'])
+    print """Too many failed password attempts for IP %s, failing""" % (ip)
     sys.exit(1)
 
 
@@ -54,7 +66,7 @@ except:
 if success==1:
     sys.exit(0)
 else:
-    c.execute("""INSERT INTO failues (username, time, remote_ip, local_ip) VALUES (%s, now(), %s, %s)""", (os.environ['username'], os.environ['untrusted_ip'], '127.0.0.1'))
+    c.execute("""INSERT INTO failures (username, time, remote_ip, local_ip) VALUES (%s, now(), %s, %s)""", (os.environ['username'], ip, '127.0.0.1'))
     db.commit()
     sys.exit(1)
 
