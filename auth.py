@@ -32,20 +32,32 @@ c.execute("""SELECT count(*) AS failures FROM failures WHERE remote_ip = %s AND 
 # I put this before it tries to pull the password, because it's harder to try SQL injecting with an IP address
 if c.fetchone()['failures'] > 5:
     print """Too many failed password attempts for IP %s, failing""" % (os.environ['untrusted_ip'])
-    sys.exit(2)
+    sys.exit(1)
 
 
 c.execute("""SELECT * FROM users WHERE username = %s""", (os.environ['username']))
 
+success=0
+
 try:
     if pbkdf2_sha512.verify(os.environ['password'], c.fetchone()['password']):
         print "logged in"
-        sys.exit(0)
+        success=1
+    else:
+        print "wrong username or password"
+        success=0
 except:
-    print "nope"
-    sys.exit(2)
+    print "other error"
+    sys.exit(1)
 
+
+if success==1:
+    sys.exit(0)
+else:
+    c.execute("""INSERT INTO failues (username, time, remote_ip, local_ip) VALUES (%s, now(), %s, %s)""", (os.environ['username'], os.environ['untrusted_ip'], '127.0.0.1'))
+    db.commit()
+    sys.exit(1)
+
+
+c.close()
 db.close()
-
-# Fail secure
-sys.exit(2)
