@@ -1,6 +1,8 @@
 #Quickstart - CentOS6 with EPEL
 
-    yum --enablerepo=epel install openvpn easy-rsa
+    yum --enablerepo=epel install openvpn easy-rsa python-setuptools
+    pip install --upgrade setuptools
+    pip install passlib
 
     cd /usr/share/easy-rsa/2.0
     nano -w vars
