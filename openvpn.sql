@@ -44,11 +44,6 @@ CREATE TABLE `log` (
   `remote_ip` varchar(40) DEFAULT NULL,
   `remote_port` varchar(10) DEFAULT NULL,
   `local_ip` varchar(40) DEFAULT NULL,
-  `local_port` varchar(10) DEFAULT NULL,
-  `device` varchar(10) DEFAULT NULL,
-  `proto` varchar(10) DEFAULT NULL,
-  `link_mtu` int(11) DEFAULT NULL,
-  `exit_signal` varchar(10) DEFAULT NULL,
   `tx_bytes` bigint(20) DEFAULT NULL,
   `rx_bytes` bigint(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -103,4 +98,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-09-05  1:05:17
+-- Dump completed on 2014-09-07 23:38:10

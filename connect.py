@@ -37,7 +37,7 @@ db=MySQLdb.connect(host=HOST,port=PORT,passwd=AUTH_PASSWD,db=DATABASE,user=AUTH_
 
 c=db.cursor()
 
-c.execute("""insert into log (username,start_time,remote_ip,remote_port) values(%s, now(), %s, %s)""", (os.environ['username'], ip, os.environ['trusted_port']))
+c.execute("""insert into log (username,start_time,remote_ip,remote_port,local_ip) values(%s, now(), %s, %s, %s)""", (os.environ['username'], ip, os.environ['trusted_port'], os.environ['ifconfig_pool_remote_ip']))
 
 db.commit()
 c.close()
